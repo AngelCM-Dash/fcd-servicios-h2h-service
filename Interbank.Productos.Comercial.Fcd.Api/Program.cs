@@ -44,6 +44,8 @@ if (builder.Configuration.GetValue<bool>("Swagger:Enabled"))
 
 app.UseAuthorization();
 
+app.UseMiddleware<DynatraceLogMiddleware>();
+
 app.UseSerilogRequestLogging();
 
 app.UseMiddleware<ExceptionMiddleware>();

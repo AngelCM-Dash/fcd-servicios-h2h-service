@@ -4,6 +4,7 @@ using Interbank.Productos.Comercial.Fcd.Application.Features.Planilla.Commands.C
 using Interbank.Productos.Comercial.Fcd.Application.Features.Planilla.Commands.Encolamiento;
 using Interbank.Productos.Comercial.Fcd.Application.Features.Planilla.Commands.OrdenarArchivosCtl;
 using Interbank.Productos.Comercial.Fcd.Application.Features.Planilla.Commands.ValidarPlanilla;
+using Interbank.Productos.Comercial.Fcd.Application.Features.Planilla.Common;
 using Interbank.Productos.Comercial.Fcd.Application.Features.Seguimiento.Queries.GetListTrackingDetailHeader;
 using Interbank.Productos.Comercial.Fcd.Domain.Entities.Constants;
 using MediatR;
@@ -32,6 +33,9 @@ namespace Interbank.Productos.Comercial.Fcd.Api.Controllers
         public async Task<ActionResult<PlanillaResponse>> CargaMasivaPlanillas([FromBody] EncolarPlanillaCommand command)
         {
             var fechaHora = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+
+            using var dynatraceScope = _logger.BeginScope(CreatePlanillaDynatraceScope("CargaMasivaPlanillas", command));
+
             _logger.LogInformation("Parametros recibidos {@Command} para la CargaMasivaPlanillas a las {fechaHora}", command, fechaHora);
 
             var actualizarPlanillaResult = await _mediator.Send(command);
@@ -44,6 +48,8 @@ namespace Interbank.Productos.Comercial.Fcd.Api.Controllers
         public async Task<ActionResult<PlanillaResponse>> ProcesoCargaMasiva([FromBody] CreatePlanillasCommand command)
         {
             var fechaHora = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+
+            using var dynatraceScope = _logger.BeginScope(CreatePlanillaDynatraceScope("ProcesoCargaMasiva", command));
 
             _logger.LogInformation("Parametros recibidos {@Command} para el ProcesoCargaMasiva a las {fechaHora}", command, fechaHora);
 
@@ -105,6 +111,17 @@ namespace Interbank.Productos.Comercial.Fcd.Api.Controllers
                 NumeroPlanilla = ""
             });
         }
+
+        private static Dictionary<string, object> CreatePlanillaDynatraceScope(string accion, PlanillaCommandBase command) => new()
+        {
+            ["EnviarDynatrace"] = true,
+            ["Accion"] = accion,
+            ["ArchivoNombre"] = command.NombreArchivo ?? string.Empty,
+            ["TransactionId"] = command.CodigoUnico ?? string.Empty,
+            ["ProductoCodigo"] = command.CodigoProducto?.ToString() ?? string.Empty,
+            ["Canal"] = command.CanalAtencion ?? string.Empty,
+            ["EstacionId"] = command.CodigoTienda?.ToString() ?? string.Empty
+        };
 
         [HttpGet("SeguimientoDetalleCabecera")]
         public async Task<ActionResult<IEnumerable<DetalleCabeceraVM>>> ObtenerSeguimientoDetalleCabecera(string? fechaDesde, string? fechaHasta, string? nombreArchivo, string? numeroPlanilla)

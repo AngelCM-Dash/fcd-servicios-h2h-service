@@ -2,6 +2,7 @@
 using Interbank.Productos.Comercial.Fcd.Application.Features.Planilla.Commands.CargaMasiva;
 using Interbank.Productos.Comercial.Fcd.Application.Models.Response;
 using Microsoft.AspNetCore.Mvc;
+using Serilog.Context;
 using System.Net;
 using System.Text.Json;
 
@@ -26,7 +27,10 @@ namespace Interbank.Productos.Comercial.Fcd.Api.Middleware
             }
             catch (ValidationException e)
             {
-                _logger.LogError(e, "Ocurrieron uno o mas errores de validacion (404). Detalles: {ErrorDetails}", e.ToString());
+                using (CreateDynatraceErrorScope(e, (int)HttpStatusCode.BadRequest, "Validation"))
+                {
+                    _logger.LogError(e, "Ocurrieron uno o mas errores de validacion (404). Detalles: {ErrorDetails}", e.ToString());
+                }
 
                 context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
 
@@ -45,7 +49,10 @@ namespace Interbank.Productos.Comercial.Fcd.Api.Middleware
             }
             catch (NotFoundException e)
             {
-                _logger.LogError(e, "Ocurrió un error, no se puedo obtener información (400). Detalles: {ErrorDetails}", e.ToString());
+                using (CreateDynatraceErrorScope(e, (int)HttpStatusCode.NotFound, "NotFound"))
+                {
+                    _logger.LogError(e, "Ocurrió un error, no se puedo obtener información (400). Detalles: {ErrorDetails}", e.ToString());
+                }
 
                 context.Response.StatusCode = (int)HttpStatusCode.NotFound;
 
@@ -65,9 +72,13 @@ namespace Interbank.Productos.Comercial.Fcd.Api.Middleware
             }
             catch (CustomException e)
             {
-                _logger.LogError(e, "Ocurrió un error interno del servidor (500). Detalles: {ErrorDetails}", e.ToString());
+                var statusCode = e.StatusCode == 0 ? (int)HttpStatusCode.InternalServerError : e.StatusCode;
+                using (CreateDynatraceErrorScope(e, statusCode, "Custom"))
+                {
+                    _logger.LogError(e, "Ocurrió un error interno del servidor (500). Detalles: {ErrorDetails}", e.ToString());
+                }
 
-                context.Response.StatusCode = e.StatusCode == 0 ? (int)HttpStatusCode.InternalServerError : e.StatusCode;
+                context.Response.StatusCode = statusCode;
 
                 CustomExceptionResponse problem = new CustomExceptionResponse
                 {
@@ -83,7 +94,10 @@ namespace Interbank.Productos.Comercial.Fcd.Api.Middleware
             }
             catch (ThrowException e)
             {
-                _logger.LogError(e, "Ocurrió un error interno del servidor (500). Detalles: {ErrorDetails}", e.Message.ToString());
+                using (CreateDynatraceErrorScope(e, (int)HttpStatusCode.InternalServerError, "Throw"))
+                {
+                    _logger.LogError(e, "Ocurrió un error interno del servidor (500). Detalles: {ErrorDetails}", e.Message.ToString());
+                }
 
                 context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
 
@@ -102,7 +116,10 @@ namespace Interbank.Productos.Comercial.Fcd.Api.Middleware
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "Ocurrió un error interno del servidor (500). Detalles: {ErrorDetails}", e.ToString());
+                using (CreateDynatraceErrorScope(e, (int)HttpStatusCode.InternalServerError, "Unhandled"))
+                {
+                    _logger.LogError(e, "Ocurrió un error interno del servidor (500). Detalles: {ErrorDetails}", e.ToString());
+                }
 
                 context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
 
@@ -120,6 +137,18 @@ namespace Interbank.Productos.Comercial.Fcd.Api.Middleware
 
                 await context.Response.WriteAsync(json);
             }
+        }
+
+        private static IDisposable CreateDynatraceErrorScope(Exception exception, int statusCode, string stage)
+        {
+            return LogContext.Push(
+                new Serilog.Core.Enrichers.PropertyEnricher("EnviarDynatrace", true),
+                new Serilog.Core.Enrichers.PropertyEnricher("HttpResponseStatusCode", statusCode),
+                new Serilog.Core.Enrichers.PropertyEnricher("ErrorType", exception.GetType().Name),
+                new Serilog.Core.Enrichers.PropertyEnricher("ErrorTitle", exception.Message),
+                new Serilog.Core.Enrichers.PropertyEnricher("ErrorStage", stage),
+                new Serilog.Core.Enrichers.PropertyEnricher("ErrorInner", exception.InnerException?.Message ?? string.Empty),
+                new Serilog.Core.Enrichers.PropertyEnricher("WioExceptionsCount", 1));
         }
     }
 }

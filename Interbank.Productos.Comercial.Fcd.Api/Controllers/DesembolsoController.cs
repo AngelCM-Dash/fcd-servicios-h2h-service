@@ -30,6 +30,9 @@ namespace Interbank.Productos.Comercial.Fcd.Api.Controllers
         public async Task<ActionResult<DesembolsoResponse>> ProcesoDesembolsoPlanilla([FromBody] DesembolsoPlanillaCommand command)
         {
             var fechaHora = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+
+            using var dynatraceScope = _logger.BeginScope(CreateDesembolsoDynatraceScope("desembolsarPlanilla", command));
+
             _logger.LogInformation("Parametros recibidos {@Command} para DesembolsarPlanilla a las {fechaHora}", command, fechaHora);
 
             var actualizarPlanillaResult = await _mediator.Send(command);
@@ -41,6 +44,9 @@ namespace Interbank.Productos.Comercial.Fcd.Api.Controllers
         public async Task<ActionResult<DesembolsoResponse>> EncolarDesembolso([FromBody] EncolarDesembolsoCommand command)
         {
             var fechaHora = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+
+            using var dynatraceScope = _logger.BeginScope(CreateDesembolsoDynatraceScope("Encolamiento", command));
+
             _logger.LogInformation("Parametros recibidos {@Command} para EncolarDesembolso a las {fechaHora}", command, fechaHora);
 
             var encolarDesembolso = await _mediator.Send(command);
@@ -53,6 +59,9 @@ namespace Interbank.Productos.Comercial.Fcd.Api.Controllers
         public async Task<ActionResult<DesembolsoResponse>> ProcesarAbono([FromBody] ActualizarPlanillaCommand command)
         {
             var fechaHora = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+
+            using var dynatraceScope = _logger.BeginScope(CreateDesembolsoDynatraceScope("ProcesoAbono", command));
+
             _logger.LogInformation("Parametros recibidos {@Command} para ProcesarAbono a las {fechaHora}", command, fechaHora);
 
             var actualizarPlanillaResult = await _mediator.Send(command);
@@ -63,9 +72,29 @@ namespace Interbank.Productos.Comercial.Fcd.Api.Controllers
         [HttpPost("ProcesarTramas")]
         public async Task<ActionResult<ProcesarTramasResponse>> procesarTramas([FromBody] ProcesarTramasCommand command)
         {
+            using var dynatraceScope = _logger.BeginScope(new Dictionary<string, object>
+            {
+                ["EnviarDynatrace"] = true,
+                ["Accion"] = "ProcesarTramas",
+                ["PlanillaNumero"] = command.NumeroPlanilla ?? string.Empty,
+                ["PlanillaNumeroSeq"] = command.NumeroSecuencia.ToString(),
+                ["OperacionCodigo"] = command.TipoProcesamiento.ToString()
+            });
+
             var procesarTramasResult = await _mediator.Send(command);
             return Ok(procesarTramasResult);
         }
+
+        private static Dictionary<string, object> CreateDesembolsoDynatraceScope(string accion, Domain.Entities.Base.DesembolsarPlanillaBase command) => new()
+        {
+            ["EnviarDynatrace"] = true,
+            ["Accion"] = accion,
+            ["PlanillaNumero"] = command.NumeroPlanilla ?? string.Empty,
+            ["OperacionCodigo"] = command.CodigoAgrupamiento ?? string.Empty,
+            ["TransactionId"] = command.CodigoUnico ?? string.Empty,
+            ["Canal"] = command.CanalAtencion ?? string.Empty,
+            ["EstacionId"] = command.CodigoTienda ?? string.Empty
+        };
 
         [HttpPost("Diferidos")]
         public async Task<ActionResult<ProcesarTramasResponse>> desembolsoDiferidos([FromBody] DesembolsoPlanillasDiferidasCommand command)
