@@ -1,0 +1,24 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Dapper" Version="2.1.72" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.4" />
+    <PackageReference Include="Microsoft.Extensions.Configuration" Version="9.0.4" />
+    <PackageReference Include="Net.IBM.Data.Db2" Version="8.0.0.200" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    <PackageReference Include="NextSIT.Utility" Version="1.0.9" />
+    <PackageReference Include="NLog.Web.AspNetCore" Version="5.4.0" />
+    <PackageReference Include="Oracle.EntityFrameworkCore" Version="9.23.80" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Interbank.Productos.Comercial.Fcd.Application\Interbank.Productos.Comercial.Fcd.Application.csproj" />
+  </ItemGroup>
+
+</Project>

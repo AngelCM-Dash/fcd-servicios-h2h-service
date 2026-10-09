@@ -1,0 +1,28 @@
+# governance-standard: v1.0.0
+name: "CD - UAT"
+run-name: "CD UAT: ${{ inputs.version }}"
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version de despliegue'
+        required: true
+        type: string
+
+jobs:
+  CD-UAT:
+    uses: ibkpe-platform-org/dso-vm-reusable/.github/workflows/_cd-iis-uat.yml@v1 # NOSONAR - internal reusable workflow
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
+      actions: write
+      issues: write
+      security-events: write
+    with:
+      application: fcd
+      component-name: fcd-servicios-h2h-service
+      version: ${{ inputs.version }}
+      servers: \\S511VA06\sda\bse\wsH2HW
+      build-type: net-ngt
+    secrets: inherit # NOSONAR - dynamic app secrets

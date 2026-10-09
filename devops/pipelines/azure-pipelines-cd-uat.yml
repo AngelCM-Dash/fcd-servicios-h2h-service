@@ -1,0 +1,62 @@
+name: '$(Rev:rr)' #  ( Not change it)
+
+pr: none
+####################
+# Trigger after any commit to master or feature/** branch
+# tags: NO SUPPORTED BY BITBUCKET CLOUD 
+####################
+trigger:
+  batch: false
+  branches:
+    include:
+    - refs/heads/master
+    - refs/heads/main
+  paths:
+    include:
+    - '*'
+    exclude:
+    - 'readme*'
+    - 'README*'
+    - 'Readme*'
+    - 'docs/*'
+
+
+####################
+# Resources Repository
+# ibkteam/dso-template
+# branch: master ( Not change it)
+####################
+resources:  
+  repositories:
+    - repository: ibkTeamAzTemplates
+      type: github
+      endpoint: 'github-generic-user'
+      name: ibkpe-org/ibkteam-azure-templates
+      ref: master
+      
+  pipelines:
+    - pipeline: pipelineorigindev   # Name of the pipeline resource #  ( Not change it)
+      source: fcd-servicios-h2h-service_cicd-dev # Name of the triggering pipeline
+      trigger:
+        branches:
+          include:
+            - refs/heads/master
+            - refs/heads/main
+            - refs/heads/hotfix/*      
+
+####################
+# Call the template of your preference
+# check the template out :
+# https://bitbucket.org/ibkteam/ibkteam-azure-templates
+####################
+extends:
+  template: src/templates/dotnet-iis/cd-uat.yml@ibkTeamAzTemplates
+  parameters:
+    projectName: "FCD"                          # nombre de proyecto
+    ibkTeamAzureTemplates: "ibkTeamAzTemplates"
+    componentName: 'fcd-servicios-h2h-service'           # nombre de componente 
+    website: false                               # tipo website legacy
+    azDevopsPrivateAgentEnable: true            # se habilitará el agente privado
+    azDevopsPoolName: 'apddevsecops02'     # nombre de pool desde donde se hará el despliegue
+    sharedFolderPath: \\S511VA06\sda\bse\wsH2HW    # ruta de la carpeta compartida | Separado por coma si es más de un servidor: Ejm: \\server1\path,\\server2\path  
+    deploymentCredentials: 'deploy'    # nombre de grupo de variables asociado a las credenciales de despliegue IIS

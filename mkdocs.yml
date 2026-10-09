@@ -1,0 +1,10 @@
+site_name: Interbank FCD Servicios H2h Service
+
+nav:
+  - Home: README.md
+  - Changelog: CHANGELOG.md
+
+docs_dir: docs
+
+plugins:
+  - techdocs-core

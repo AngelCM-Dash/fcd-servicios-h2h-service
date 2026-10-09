@@ -1,0 +1,176 @@
+name: '$(Rev:rr)' #  ( Not change it)
+
+####################
+
+# Trigger after any commit to master or feature/** branch
+
+# tags: NO SUPPORTED BY BITBUCKET CLOUD 
+
+####################
+
+trigger:
+
+  batch: false
+
+  branches:
+
+    include:
+
+    - refs/heads/feature/*
+
+    - refs/heads/hotfix/*
+
+  paths:
+
+    include:
+
+    - '*'
+
+    exclude:
+
+    - 'readme*'
+
+    - 'README*'
+
+    - 'Readme*'
+
+    - 'docs/*'
+
+####################
+
+# scheduled: Daily Trunk Code Revision
+
+# MONDAY TO FRIDAY AT 7:00 AM (UTC-5)
+
+####################
+
+schedules:
+
+  - cron: "0 12 * * 1-5"
+
+    branches:
+
+      include:
+
+        - refs/heads/master
+
+        - refs/heads/main
+
+    displayName: "Daily Trunk Code Revision "
+
+    always: true
+
+####################
+
+# Pull Request to master/main
+
+# autocancel consecutive PR 
+
+# drafts NO SUPPORTED BY BITBUCKET CLOUD 
+
+####################
+
+pr:
+
+  autoCancel: true
+
+  paths:
+
+    include:
+
+    - '*'
+
+    exclude:
+
+    - 'readme*'
+
+    - 'README*'
+
+    - 'Readme*'
+
+    - 'docs/*'
+
+  branches:
+
+    include:
+
+    - refs/heads/master
+
+    - refs/heads/main
+
+
+####################
+
+# Resources Repository
+
+# ibkteam/dso-template
+
+# branch: master ( Not change it)
+
+####################
+
+resources:
+
+  repositories:
+
+    - repository: ibkTeamAzTemplates
+
+      type: github
+
+      endpoint: 'github-generic-user'
+
+      name: ibkpe-org/ibkteam-azure-templates
+
+      ref: master
+
+
+####################
+
+# Call the template of your preference
+
+# check the template out :
+
+# https://bitbucket.org/ibkteam/ibkteam-azure-templates
+
+####################
+
+extends:
+
+  template: src/templates/dotnet-iis/ci.yml@ibkTeamAzTemplates
+
+  parameters:
+
+    projectName: "FCD"                          # Project Name
+
+    ibkTeamAzureTemplates: "ibkTeamAzTemplates" # Repository Name
+
+    componentName: 'fcd-servicios-h2h-service'       # Component Name
+
+    jobVmImage : 'windows-2022'                 # VM Image
+
+    website: false                               # Deploy Website
+
+    frameworkVersion: 'net8.0'                   # .Net Framework Version
+
+    buildPlatform: 'Any CPU'                    # Platform OS Architecture
+
+    buildConfiguration: 'Release'               # Build Configuration
+
+    debug: true                                 # Enable debug logs
+
+    cache: true                                 # Enable cache
+
+    flags:                                      # Opcional                    
+
+      unitTestsEnabled: true                    # Opcional. Modificable. Habilita pruebas unitarias [true/false]
+
+      sonarEnabled: true                        # Opcional. Modificable. Habilita an�lisis est�tico de SonarCloud [true/false]
+
+      sonarQualityGateEnabled: true             # Opcional. Modificable. Habilita Quality Gate de SonarCloud [true/false]
+
+      jFrogXrayEnabled: true                    # Opcional. Modificable. Habilita JFrog Xray [true/false]
+
+      fluidAttacksEnabled: true                 # Opcional. Modificable. Habilita Fluid Attacks [true/false]
+
+ 
+ 

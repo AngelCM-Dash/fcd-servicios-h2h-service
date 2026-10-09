@@ -1,0 +1,48 @@
+# governance-standard: v1.0.0
+name: "CICD - DEV"
+on:
+  push:
+    branches: [ main, master, 'release/**', 'hotfix/**' ]
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  CI:
+    uses: ibkpe-platform-org/dso-net-reusable/.github/workflows/_ci-backend.yml@v1 # NOSONAR - internal reusable workflow
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
+      actions: write
+      issues: write
+      security-events: write
+    with:
+      application: fcd
+      component-name: fcd-servicios-h2h-service
+      framework-version: 'net8.0'
+      precompiled: false
+      build-platform: 'Any CPU'
+      build-configuration: 'Release'
+      component-type: 'backend'
+      runner-os: windows-2022
+      deployment-platform: 'net-iis'
+    secrets: inherit # NOSONAR - dynamic app secrets
+
+  CD-DEV:
+    needs: CI
+    uses: ibkpe-platform-org/dso-vm-reusable/.github/workflows/_cd-iis-dev.yml@v1 # NOSONAR - internal reusable workflow
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
+      actions: write
+      issues: write
+      security-events: write
+    with:
+      application: fcd
+      component-name: fcd-servicios-h2h-service
+      version: ${{ needs.CI.outputs.version }}
+      servers: \\s511vd04\sda\bse\wsH2HW
+      build-type: net-ngt
+    secrets: inherit # NOSONAR - dynamic app secrets

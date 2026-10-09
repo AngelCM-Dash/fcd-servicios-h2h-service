@@ -1,0 +1,66 @@
+name: '$(Rev:rr)' #  ( Not change it)
+
+pr: none
+####################
+# Trigger after any commit to master or feature/** branch
+# tags: NO SUPPORTED BY BITBUCKET CLOUD 
+####################
+trigger:
+  batch: false
+  branches:
+    include:
+    - refs/heads/master
+    - refs/heads/main
+  paths:
+    include:
+    - '*'
+    exclude:
+    - 'readme*'
+    - 'README*'
+    - 'Readme*'
+    - 'docs/*'
+
+
+####################
+# Resources Repository
+# ibkteam/dso-template
+# branch: master ( Not change it)
+####################
+resources:
+  repositories:
+    - repository: ibkTeamAzTemplates
+      type: github
+      endpoint: 'github-generic-user'
+      name: ibkpe-org/ibkteam-azure-templates
+      ref: master
+
+####################
+# Call the template of your preference
+# check the template out :
+# https://bitbucket.org/ibkteam/ibkteam-azure-templates
+####################
+extends:
+  template: src/templates/dotnet-iis/cicd-dev.yml@ibkTeamAzTemplates
+  parameters:
+    projectName: "FCD"                          # nombre de proyecto
+    ibkTeamAzureTemplates: "ibkTeamAzTemplates"
+    componentName: 'fcd-servicios-h2h-service'           # nombre de componente 
+    website: false                               # tipo website legacy
+    jobVmImage : 'windows-2022'                 # imagen para ejecución del CI agente ms-hosted
+    frameworkVersion: 'net8.0'                   # framework objetivo
+    buildPlatform: 'win-x64'                       # plataforma de destino
+    buildConfiguration: 'Release'               # configuración del build Release/Debug
+    debug: true
+    cache: true
+    azDevopsPrivateAgentEnable: true            # se habilitará el agente privado
+    azDevopsPoolName: 'apddevsecops02'     # nombre de pool desde donde se hará el despliegue
+    sharedFolderPath: \\s511vd04\sda\bse\wsH2HW    # ruta de la carpeta compartida | Separado por coma si es más de un servidor: Ejm: \\server1\path,\\server2\path  
+    deploymentCredentials: 'deploy'    # nombre de segmento de variable identificador dentro de el grupo ibkteam-devops-app-credentials-dev (Ejm: credential-app si variable es credential-app.user) asociado a las credenciales de despliegue IIS
+    comObjects: ''                              # lista de objetos COM+ separados por ',' estos objetos COM+ deben estar dentro del compilado
+    comPath: ''                                 # Ubicación donde se actualizaran los objetos COM+ en el servidor de aplicación
+    flags:                                      # Opcional                    
+      unitTestsEnabled: true                    # Opcional. Modificable. Habilita pruebas unitarias [true/false]
+      sonarEnabled: true                        # Opcional. Modificable. Habilita análisis estático de SonarCloud [true/false]
+      sonarQualityGateEnabled: true             # Opcional. Modificable. Habilita Quality Gate de SonarCloud [true/false]
+      jFrogXrayEnabled: true                    # Opcional. Modificable. Habilita JFrog Xray [true/false]
+      fluidAttacksEnabled: true                 # Opcional. Modificable. Habilita Fluid Attacks [true/false]

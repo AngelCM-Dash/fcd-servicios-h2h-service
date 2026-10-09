@@ -1,0 +1,32 @@
+# governance-standard: v1.0.0
+name: "CD - PRD"
+run-name: "CD PRD [${{ inputs.oc }}] ${{ inputs.version }}"
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version de despliegue'
+        required: true
+        type: string
+      oc:
+        description: 'Orden de cambio (OC)'
+        required: false
+
+jobs:
+  CD-PRD:
+    uses: ibkpe-platform-org/dso-vm-reusable/.github/workflows/_cd-iis-prd.yml@v1 # NOSONAR - internal reusable workflow
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
+      actions: write
+      issues: write
+      security-events: write
+    with:
+      application: fcd
+      component-name: fcd-servicios-h2h-service
+      version: ${{ inputs.version }}
+      oc: ${{ inputs.oc }}
+      servers: \\s503v217\sda\bse\app
+      build-type: net-ngt
+    secrets: inherit # NOSONAR - dynamic app secrets

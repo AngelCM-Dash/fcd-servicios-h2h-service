@@ -1,0 +1,59 @@
+# Author: @Edwin Contreras
+# Project: ibkteam-azure-templates
+# Warnings:
+# 1. It is NOT allow declaring variables in this template
+# 2. It is OPTIONAL declare parameters
+# 3. Pass POOL as parameters  , do not declare it in this template
+
+####################
+name: '$(Rev:rr)' #  ( Not change it)
+
+parameters:
+    
+  - name: 'environment'
+    displayName: 'Rollback Environment'
+    type: string
+    values:
+      - 'prod'
+
+  - name: 'helmRevisionId'
+    displayName: 'Helm revision ID'
+    type: number
+    
+
+trigger: none
+pr: none
+####################
+# Resources Repository
+# ibkteam/dso-template
+# branch: master  ( Not change it)
+####################
+resources:
+  repositories:
+    - repository: ibkTeamAzTemplates
+      type: github
+      endpoint: 'github-generic-user' 
+      name: ibkpe-org/ibkteam-azure-templates
+      ref: master
+
+    - repository: appConfigRepo
+      type: github
+      endpoint: 'github-generic-user'
+      name: ibkpe-org/dso-template-configs
+      ref: master
+
+####################
+# Call the template of your preference
+# check the template out :
+# https://bitbucket.org/ibkteam/ibkteam-azure-templates
+####################
+extends:
+  template: src/templates/java-k8s/rollback.yml@ibkTeamAzTemplates
+  parameters:
+    projectName: "DSO"
+    ibkTeamAzureTemplates: "ibkTeamAzTemplates"
+    configsRepoName: "appConfigRepo"
+    helmRevisionId: ${{ parameters.helmRevisionId }}
+    rollbackEnv: ${{ parameters.environment }}
+    debug: true
+    oidcEnable: true                            # Habilitar uso de conexion OIDC con Azure ARM

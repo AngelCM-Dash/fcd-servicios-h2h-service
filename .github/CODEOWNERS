@@ -1,0 +1,12 @@
+# ================================================
+# CODEOWNERS  (aprobador obligatorio)
+# Ubicación recomendada: .github/CODEOWNERS
+# Regla de GitHub: el ÚLTIMO patrón que coincide es el que aplica.
+# Mantén los patrones ESPECÍFICOS al final.
+# ================================================
+# 👑 Dueño global (fallback)
+# Todos los archivos del repo requieren revisión del equipo approver.
+* @ibkpe-org/fcd-backend-approvers
+/.github/**                @ibkpe-org/arq-devsecops-read
+/devops/Dockerfile.ci      @ibkpe-org/arq-devsecops-read
+/devops/helm/prd/          @ibkpe-org/arq-devsecops-read

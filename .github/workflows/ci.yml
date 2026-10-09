@@ -1,0 +1,31 @@
+# governance-standard: v1.0.0
+name: "CI"
+on:
+  push:
+    branches: [ 'feature/**' ]
+  pull_request:
+    branches: [ main, master, 'release/**', 'hotfix/**' ]
+  workflow_dispatch:
+
+jobs:
+  CI:
+    uses: ibkpe-platform-org/dso-net-reusable/.github/workflows/_ci-backend.yml@v1 # NOSONAR - internal reusable workflow
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
+      actions: write
+      issues: write
+      pull-requests: write
+      security-events: write
+    with:
+      application: fcd
+      component-name: fcd-servicios-h2h-service
+      framework-version: 'net8.0'
+      build-platform: 'Any CPU'
+      build-configuration: 'Release'
+      precompiled: false
+      component-type: 'backend'
+      runner-os: windows-2022
+      deployment-platform: 'net-iis'
+    secrets: inherit # NOSONAR - dynamic app secrets

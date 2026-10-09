@@ -1,0 +1,76 @@
+﻿namespace Interbank.Productos.Comercial.Fcd.Domain.Entities.DB2
+{
+    public class FcdPagoMasiMae
+    {
+        public string? CodigoRetorno { get; set; }
+        public string? CodigoTransaccion { get; set; }
+        public string? CodigoPrograma { get; set; }
+        public string? CodigoUsuario { get; set; }
+        public string? NumeroOperacion { get; set; }
+        public int NumeroSecuenciaOperacion { get; set; }
+        public string? FechaProceso { get; set; }
+        public string? NumeroPlanilla { get; set; }
+        public int NumeroSecuenciaPlanilla { get; set; }
+        public string? CodigoUnico { get; set; }
+        public string? CodigoRegistroEmpleado { get; set; }
+        public string? CodigoTiendaOrigen { get; set; }
+        public string? CodigoTipoCuentaAbono { get; set; }
+        public string? CodigoBancoAbono { get; set; }
+        public string? CodigoMonedaAbono { get; set; }
+        public string? CodigoTiendaAbono { get; set; }
+        public string? CodigoCategoriaAbono { get; set; }
+        public string? NumeroCuentaAbono { get; set; }
+        public string? CodigoTipoCuentaCargo { get; set; }
+        public string? CodigoBancoCargo { get; set; }
+        public string? CodigoMonedaCargo { get; set; }
+        public string? CodigoTiendaCargo { get; set; }
+        public string? CodigoCategoriaCargo { get; set; }
+        public string? NumeroCuentaCargo { get; set; }
+        public string? FlagExtorno { get; set; }
+        public string? DescripcionCorta { get; set; }
+        public decimal ImporteAbono { get; set; }
+        public decimal ImporteCargo { get; set; }
+        public string? FlagCobroForzoso { get; set; }
+        public string? FlagCobroParcial { get; set; }
+        public string? FlagTipoCambio { get; set; }
+        public string? CodigoMoneda { get; set; }
+        public string? CodigoClaseTipoCambio { get; set; }
+        public decimal ImporteTipoCambio { get; set; }
+        public decimal ImporteEquivalente { get; set; }
+        public int NumeroLogExtorno { get; set; }
+        public string? FlagGlosaProducto { get; set; }
+        public string? GlosaProducto { get; set; }
+        public string? CodigoBancoCci { get; set; }
+        public string? CodigoMonedaCci { get; set; }
+        public string? CodigoTiendaCci { get; set; }
+        public string? CodigoCategoriaCci { get; set; }
+        public string? NumeroCuentaOrdenanteCci { get; set; }
+        public string? CodigoUnicoOrdenanteCci { get; set; }
+        public string? NombreOrdenanteCci { get; set; }
+        public string? CodigoUnicoBeneficiarioCci { get; set; }
+        public string? CodigoMonedaCciBcr { get; set; }
+        public decimal ImporteCci { get; set; }
+        public string? NumeroCuentaProveedorCci { get; set; }
+        public string? NombreBeneficiarioCci { get; set; }
+        public string? FlagNeteo { get; set; }
+        public string? TipodocumentoAceptanteBcr { get; set; }
+        public string? NumeroDocumentoAceptanteBcr { get; set; }
+        public string? TipodocumentoGiradorBcr { get; set; }
+        public string? NumeroDocumentoGiradorBcr { get; set; }
+        public string? CodigoEstatusPago { get; set; }
+        public string? CodigoEstatusRetorno { get; set; }
+        public string? DescripcionMensaje { get; set; }
+        public string? NumeroDocumento { get; set; }
+        public decimal ImporteDesembolsado { get; set; }
+        public string? FlagExtornoRetorno { get; set; }
+        public int NumeroLogExtornoRetorno { get; set; }
+        public decimal ImporteComisionCci { get; set; }
+        public decimal ImporteComisionIb { get; set; }
+        public decimal ImporteDesembolsadoCci { get; set; }
+        public string? HoraFinalProceso { get; set; }
+        public string? NumeroInstruccion { get; set; }
+        public string? CodigoCliente { get; set; }
+        public string? CodigoTipoProceso { get; set; }
+        public string? CodigoEnvioCorreo { get; set; }
+    }
+}
