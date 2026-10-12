@@ -9,6 +9,7 @@ namespace Interbank.Productos.Comercial.Fcd.Infrastructure.Services.Traza
     {
         private readonly ISeguimientoRepository _seguimientoRepository;
         private readonly ILogger<TrazaService> _logger;
+        private static long _secuenciaDetalleTraza = 75920; // agregado para mock
         public TrazaService(ISeguimientoRepository seguimientoRepository, ILogger<TrazaService> logger)
         {
             ArgumentNullException.ThrowIfNull(seguimientoRepository);
@@ -23,13 +24,17 @@ namespace Interbank.Productos.Comercial.Fcd.Infrastructure.Services.Traza
             _logger.LogInformation("RegistrarCabeceraTraza llamado con IdDetalle: {IdDetalle}, NombreArchivo: {NombreArchivo}, NroPlanilla: {NroPlanilla}, Flag: {Flag}",
             IdDetalle, NombreArchivo, NroPlanilla, Flag);
 
-            return _seguimientoRepository.InsertaSeguimientoCabecera(new DapperSeguimientoCabecera
-            {
-                IdDetalle = IdDetalle,
-                NombreArchivo = NombreArchivo,
-                NroPlanilla = NroPlanilla,
-                Flag = Flag
-            });
+            //return _seguimientoRepository.InsertaSeguimientoCabecera(new DapperSeguimientoCabecera
+            //{
+            //    IdDetalle = IdDetalle,
+            //    NombreArchivo = NombreArchivo,
+            //    NroPlanilla = NroPlanilla,
+            //    Flag = Flag
+            //});
+            // MOCK TEMPORAL: Generar identificador secuencial
+            long nuevoId = Interlocked.Increment(ref _secuenciaDetalleTraza);
+
+            return Task.FromResult((decimal)nuevoId);
         }
 
         public Task<decimal> RegistrarDetalleTraza(decimal IdDetalle, string? NombreMetodo, string? CapaObservacion, string? DetalleObservacion, int IdEstacion)
@@ -37,14 +42,15 @@ namespace Interbank.Productos.Comercial.Fcd.Infrastructure.Services.Traza
             _logger.LogInformation("RegistrarDetalleTraza llamado con IdDetalle: {IdDetalle}, NombreMetodo: {NombreMetodo}, CapaObservacion: {CapaObservacion}, DetalleObservacion: {DetalleObservacion}, IdEstacion: {IdEstacion}",
             IdDetalle, NombreMetodo, CapaObservacion, DetalleObservacion, IdEstacion);
 
-            return _seguimientoRepository.InsertaSeguimientoDetalle(new DapperSeguimientoDetalle
-            {
-                IdDetalle = IdDetalle,
-                NombreMetodo = NombreMetodo,
-                CapaObservacion = CapaObservacion,
-                DetalleObservacion = DetalleObservacion,
-                IdEstacion = IdEstacion
-            });
+            //return _seguimientoRepository.InsertaSeguimientoDetalle(new DapperSeguimientoDetalle
+            //{
+            //    IdDetalle = IdDetalle,
+            //    NombreMetodo = NombreMetodo,
+            //    CapaObservacion = CapaObservacion,
+            //    DetalleObservacion = DetalleObservacion,
+            //    IdEstacion = IdEstacion
+            //});
+            return Task.FromResult(1208565m); //mock temporal
         }
     }
 }
