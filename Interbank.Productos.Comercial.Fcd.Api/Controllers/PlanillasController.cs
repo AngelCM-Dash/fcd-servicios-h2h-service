@@ -66,10 +66,10 @@ namespace Interbank.Productos.Comercial.Fcd.Api.Controllers
                 CodigoDominio = DominioGestorValidacionCargaMasiva
             };
 
-            var responseControlVal = await _mediator.Send(query);
+            //var responseControlVal = await _mediator.Send(query); //comentado Luis
 
-            var flagValidate = Convert.ToInt32(responseControlVal.Find(x => x.NUMEROORDEN == (int)NumOrdenDominioGestorValidacionCargaMasiva.FlagValidacionFacturas)?.DESCRIPCIONCORTA ?? "");
-
+            //var flagValidate = Convert.ToInt32(responseControlVal.Find(x => x.NUMEROORDEN == (int)NumOrdenDominioGestorValidacionCargaMasiva.FlagValidacionFacturas)?.DESCRIPCIONCORTA ?? ""); //comentado Luis
+            var flagValidate = 0; //agregado Luis
             if (flagValidate != 0)
             {
                 var request = new ValidatePlanillaCommand()

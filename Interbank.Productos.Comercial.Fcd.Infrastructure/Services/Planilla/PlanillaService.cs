@@ -64,10 +64,11 @@ namespace Interbank.Productos.Comercial.Fcd.Infrastructure.Services.Planilla
 
             _logger.LogInformation("Iniciando EncolamientoCargaMasiva.");
 
-            var parametros = await _utilitariosRepository.ObtenerParametrosPorCodigoDominio(ParametroConstants.DominioServiciosProcesoCargaMasiva);
+            //var parametros = await _utilitariosRepository.ObtenerParametrosPorCodigoDominio(ParametroConstants.DominioServiciosProcesoCargaMasiva);
 
-            var solicitudUrl = parametros.Find(x => x.NUMEROORDEN == (int)NumOrdenDominioUrlServiciosEncolamientoCargaMasiva.UrlApiEncolamiento)?.DESCRIPCIONCORTA ?? string.Empty;
-
+            //var solicitudUrl = parametros.Find(x => x.NUMEROORDEN == (int)NumOrdenDominioUrlServiciosEncolamientoCargaMasiva.UrlApiEncolamiento)?.DESCRIPCIONCORTA ?? string.Empty;
+            var solicitudUrl = "https://localhost:44310/api/v1/Planillas/ProcesoCargaMasiva";
+            
             if (string.IsNullOrWhiteSpace(solicitudUrl))
             {
                 _logger.LogError("No se encontró la URL de solicitud para EncolamientoCargaMasiva.");
