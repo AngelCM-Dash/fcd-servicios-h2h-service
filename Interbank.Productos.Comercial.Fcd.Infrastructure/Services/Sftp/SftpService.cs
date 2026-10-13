@@ -352,7 +352,7 @@ namespace Interbank.Productos.Comercial.Fcd.Infrastructure.Services.Sftp
         // 4. LEER LINEAS DE ARCHIVO
         // =============================================
 
-        public Task<string[]> LeerLineasArchivoSftp(string rutaRemota)
+        public async Task<string[]> LeerLineasArchivoSftp(string rutaRemota)
         {
             try
             {
@@ -363,7 +363,16 @@ namespace Interbank.Productos.Comercial.Fcd.Infrastructure.Services.Sftp
                 if (DebeSimularError("LeerArchivo"))
                     throw new Exception("Error simulado al leer archivo SFTP");
 
-                return Task.FromResult(Array.Empty<string>());
+                // MOCK: Carpeta docs relativa a la raíz del proyecto.
+                string directorioLocal = Path.Combine(Directory.GetCurrentDirectory(), "docs");
+                string nombreArchivo = "2052243424907PEN0000000080000002026100921022900000.txt";
+                // Construir la ruta local.
+                string rutaArchivoLocal = Path.Combine(directorioLocal, nombreArchivo);
+
+                // Leer el archivo local.
+                string[] lineas = await File.ReadAllLinesAsync(rutaArchivoLocal);
+
+                return lineas;
             }
             catch (Exception ex)
             {

@@ -122,8 +122,7 @@ namespace Interbank.Productos.Comercial.Fcd.Application.Features.Planilla.Comman
                     await _trazaService.RegistrarDetalleTraza(CodigoDetalleTraza, GetType().Name, TrazaConstante.TrazaCargaPlaF, "Registro Correctamente la Cabecera", 4);
 
                     var sqlLdrcn = datosConfig.Find(p => p.NUMEROORDEN == (int)ParametroConstants.NumOrdenDominioCargaMasiva.SqlLdrCn)?.DESCRIPCIONCORTA ?? string.Empty;
-                    //var flagCargaDocumentos = Convert.ToInt32(datosConfig.Find(p => p.NUMEROORDEN == (int)ParametroConstants.NumOrdenDominioCargaMasiva.FlagCargaDocumentos)?.DESCRIPCIONCORTA ?? string.Empty); //comentado Luis
-                    var flagCargaDocumentos = 1; //agregado Luis
+                    var flagCargaDocumentos = Convert.ToInt32(datosConfig.Find(p => p.NUMEROORDEN == (int)ParametroConstants.NumOrdenDominioCargaMasiva.FlagCargaDocumentos)?.DESCRIPCIONCORTA ?? string.Empty);
 
                     await _trazaService.RegistrarDetalleTraza(CodigoDetalleTraza, GetType().Name, TrazaConstante.TrazaEncolamientoPlanillaI, "Inicia Proceso de Encolamiento de Planilla", 5);
                     await _encolamientoPlanillaService.EnqueueAsync(PlanillaC, request.NombreArchivo ?? "", sqlLdrcn, CodigoDetalleTraza, flagCargaDocumentos);
