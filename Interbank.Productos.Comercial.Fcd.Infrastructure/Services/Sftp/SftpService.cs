@@ -357,20 +357,13 @@ namespace Interbank.Productos.Comercial.Fcd.Infrastructure.Services.Sftp
             try
             {
                 _logger.LogInformation("Leyendo archivo remoto línea por línea: {Ruta}", rutaRemota);
-
+                
                 // MOCK: No lee archivos del servidor.
-
                 if (DebeSimularError("LeerArchivo"))
                     throw new Exception("Error simulado al leer archivo SFTP");
 
-                // MOCK: Carpeta docs relativa a la raíz del proyecto.
-                string directorioLocal = Path.Combine(Directory.GetCurrentDirectory(), "docs");
-                string nombreArchivo = "2052243424907PEN0000000080000002026100921022900000.txt";
-                // Construir la ruta local.
-                string rutaArchivoLocal = Path.Combine(directorioLocal, nombreArchivo);
-
                 // Leer el archivo local.
-                string[] lineas = await File.ReadAllLinesAsync(rutaArchivoLocal);
+                string[] lineas = await File.ReadAllLinesAsync(rutaRemota);
 
                 return lineas;
             }

@@ -529,7 +529,6 @@ using NextSIT.Utility;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace Interbank.Productos.Comercial.Fcd.Infrastructure.Repositories
@@ -538,9 +537,6 @@ namespace Interbank.Productos.Comercial.Fcd.Infrastructure.Repositories
     public class PlanillasRepository : IPlanillasRepository
     {
         private readonly ILogger<PlanillasRepository> _logger;
-        private static long _numeroPlanilla = 100097421;
-        private static int _secuenciaDocumentosDuplicados = 1000;
-        private static long _secuenciaInterna = 200000;
         private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, DapperPlanillaCompleta>
             _planillas = new(StringComparer.Ordinal);
 
@@ -549,16 +545,12 @@ namespace Interbank.Productos.Comercial.Fcd.Infrastructure.Repositories
         public static string MockMetodoError = "TODOS";
         // 0 = sin duplicidad; 1 = duplicada; 2 = error con log original.
         public static int MockEscenarioDuplicidad = 0;
-        // 822 = DE, 821 = FE.
-        public static int MockCodigoFormaOperacion = 822;
+        public static int MockCodigoFormaOperacion = 0;
         public static int MockCodigoCliente = 456802;
-        public static int MockResultadoEntero = 1;
+        // 0 = ok ; otro = error
+        public static int MockResultadoEntero = 0;
 
-        public PlanillasRepository(
-            ITypeConvertionManager typeConvertionManager,
-            ILogger<PlanillasRepository> logger,
-            IOracleConnectionFactory oracleConnectionFactory,
-            IDapperExecutor dapperExecutor)
+        public PlanillasRepository(ITypeConvertionManager typeConvertionManager, ILogger<PlanillasRepository> logger, IOracleConnectionFactory oracleConnectionFactory, IDapperExecutor dapperExecutor)
         {
             ArgumentNullException.ThrowIfNull(typeConvertionManager);
             ArgumentNullException.ThrowIfNull(logger);
@@ -583,7 +575,7 @@ namespace Interbank.Productos.Comercial.Fcd.Infrastructure.Repositories
             try
             {
                 ProvocarError(nameof(RegistrarPlanillaFCD_H2H));
-                planilla.NumeroPlanilla = Interlocked.Increment(ref _numeroPlanilla).ToString("D10");
+                planilla.NumeroPlanilla = MockSecuenciaService.Siguiente("NumeroPlanilla").ToString("D10");
                 planilla.CodigoCliente = MockCodigoCliente;
                 _planillas[planilla.NumeroPlanilla] = planilla;
                 return Task.FromResult(planilla);
@@ -600,6 +592,7 @@ namespace Interbank.Productos.Comercial.Fcd.Infrastructure.Repositories
             try
             {
                 ProvocarError(nameof(ObtenerCodigoFormacionFCD_H2H));
+                MockCodigoFormaOperacion = planilla.CodigoProducto == 31 ? 822 : 821; // 822 = DE, 821 = FE.
                 return Task.FromResult(MockCodigoFormaOperacion);
             }
             catch (Exception ex)
@@ -687,7 +680,7 @@ namespace Interbank.Productos.Comercial.Fcd.Infrastructure.Repositories
             try
             {
                 ProvocarError(nameof(GeneraCodigoSecuenciaDocumentosDuplicados));
-                return Task.FromResult(Interlocked.Increment(ref _secuenciaDocumentosDuplicados));
+                return Task.FromResult(checked((int)MockSecuenciaService.Siguiente("CodigoSecuenciaDocumentos")));
             }
             catch (Exception ex)
             {
@@ -765,7 +758,7 @@ namespace Interbank.Productos.Comercial.Fcd.Infrastructure.Repositories
                 {
                     lista.Add(new DapperSecuenciaPlanilla
                     {
-                        NumeroSecuencia = Interlocked.Increment(ref _secuenciaInterna).ToString()
+                        NumeroSecuencia = MockSecuenciaService.Siguiente("NumeroInternoDocumento").ToString()
                     });
                 }
                 return Task.FromResult(lista);
@@ -825,9 +818,70 @@ namespace Interbank.Productos.Comercial.Fcd.Infrastructure.Repositories
         {
             try
             {
+                // MOCK TEMPORAL - SIN CONEXION A ORACLE
                 ProvocarError(nameof(ObtenerConfiguracionCTL));
-                // Se necesitan datos CTL reales para simular el parseo completo.
-                return Task.FromResult(new List<DapperParametroCtl>());
+
+                // Valores dinamicos de la prueba
+                string codigoCliente = Convert.ToString(planilla.CodigoCliente) ?? "";
+                string codigoMoneda = Convert.ToString(planilla.CodigoMoneda) ?? "";
+                string numeroPlanilla = Convert.ToString(planilla.NumeroPlanilla) ?? "";
+
+                // Construye un registro de configuracion CTL
+                DapperParametroCtl Ctl(int correlativo, int orden, string columna, int posicionInicial, int posicionFinal, string adicional)
+                {
+                    return new DapperParametroCtl
+                    {
+                        CORRELATIVO = correlativo,
+                        ORDEN = orden,
+                        COLUMNA = columna,
+                        POSICIONINICIAL = posicionInicial,
+                        POSICIONFINAL = posicionFinal,
+                        ADICIONAL = adicional
+                    };
+                }
+
+                var listaConfiguracionCtl = new List<DapperParametroCtl>
+                {
+                    Ctl(1, 1, "NUMEROINTERNO", 0, 0, "LPAD(TO_CHAR(SEQ_NUMEROINTERNODOCUMENTO.NEXTVAL), 10, '0')"),
+                    Ctl(2, 2, "ITEM", 0, 0, "SEQUENCE(1, 1)"),
+                    Ctl(3, 3, "CODIGOCLIENTEPLANILLA", 1, 20, codigoCliente),
+                    Ctl(4, 4, "NUMERODOCUMENTOFISICO", 72, 91, ""),
+                    Ctl(5, 5, "CODIGOMONEDA", 1, 20, codigoMoneda),
+                    Ctl(6, 6, "IMPORTEORIGINAL", 102, 116, "PKG_FCD_CARGAMASIVA.Fn_FORMATONUMERO(:IMPORTEORIGINAL)"),
+                    Ctl(7, 7, "FECHAVENCIMIENTO", 473, 481, "TO_DATE(:FECHAVENCIMIENTO,'YYYYMMDD')"),
+                    Ctl(8, 8, "NUMEROPLANILLA", 1, 20, $"LPAD(TO_CHAR({numeroPlanilla}), 10, '0')"),
+                    Ctl(9, 9, "CODIGOCLIENTE", 407, 417, ""),
+                    Ctl(10, 10, "FECHAREGISTRO", 1, 20, "SYSDATE"),
+                    Ctl(11, 11, "PROTESTABLE", 1, 20, "0"),
+                    Ctl(12, 12, "FLAGCUOTA", 1, 20, "0"),
+                    Ctl(13, 13, "FLAGCOMPLETADO", 1, 20, "1"),
+                    Ctl(14, 14, "NUMEROCUOTAS", 1, 20, "1"),
+                    Ctl(15, 15, "NUMERODOCUMENTOACEPTANTE", 151, 165, "TRIM(:NUMERODOCUMENTOACEPTANTE)"),
+                    Ctl(16, 16, "RAZONSOCIALACEPTANTE", 514, 614, "TRIM(:RAZONSOCIALACEPTANTE)"),
+                    Ctl(17, 17, "TIPODOCUMENTOACEPTANTE", 511, 513, "TRIM(:TIPODOCUMENTOACEPTANTE)"),
+                    Ctl(18, 18, "CODIGOTIPODOCUMENTOCOBRANZA", 482, 484, "TRIM(:CODIGOTIPODOCUMENTOCOBRANZA)"),
+                    Ctl(19, 19, "CODIGOTIPOABONO", 485, 488, "TRIM(:CODIGOTIPOABONO)"),
+                    Ctl(20, 20, "CODIGOTIPOCUENTA", 454, 456, ""),
+                    Ctl(21, 21, "NUMEROCUENTA", 418, 437, "TRIM(:NUMEROCUENTA)"),
+                    Ctl(22, 22, "NUMEROLINEA", 438, 446, "TRIM(:NUMEROLINEA)"),
+                    Ctl(23, 23, "FECHACARGO", 489, 497, "TO_DATE(:FECHACARGO,'YYYYMMDD')"),
+                    Ctl(24, 24, "NUMEROINSTRUCCION", 386, 406, "LPAD(TO_CHAR(TRIM(:NUMEROINSTRUCCION)), 18, '0')"),
+                    Ctl(25, 25, "FECHAADELANTO", 498, 506, "PKG_FCD_CARGAMASIVA.Fn_FORMATOFECHA(:FECHAADELANTO,'YYYYMMDD')"),
+                    Ctl(26, 26, "SALDOACTUALDOCUMENTO", 102, 116, "PKG_FCD_CARGAMASIVA.Fn_FORMATONUMERO(:IMPORTEORIGINAL)"),
+                    Ctl(27, 27, "CODIGOTIPOADELANTO", 507, 509, "TO_NUMBER(:CODIGOTIPOADELANTO)"),
+                    Ctl(28, 28, "FLAGOBSERVADO", 1, 20, "0"),
+                    Ctl(29, 29, "OBSERVACION", 1, 20, "''"),
+                    Ctl(30, 30, "REGLASVALIDACION", 1, 20, "''"),
+                    Ctl(31, 31, "CODIGOESTADO", 1, 20, "44"),
+                    Ctl(32, 32, "APLICAPORTES", 447, 448, "TRIM(:APLICAPORTES)"),
+                    Ctl(33, 33, "DIASAMPLIACION", 449, 451, "TRIM(:DIASAMPLIACION)"),
+                    Ctl(34, 34, "VALIDARCUENTACLIENTE", 452, 452, ""),
+                    Ctl(35, 35, "DESEMBOLSOAUTOMATICO", 453, 453, ""),
+                    Ctl(36, 36, "PORCENTAJEPRORROGA", 615, 635, "TO_NUMBER(TRIM(:PORCENTAJEPRORROGA), '99999.999999')"),
+                    Ctl(37, 37, "TIPOCAMBIOWDC", 638, 665, "TO_NUMBER(TRIM(:TIPOCAMBIOWDC), '99999.999999')")
+                };
+
+                return Task.FromResult(listaConfiguracionCtl.OrderBy(x => x.ORDEN).ToList());
             }
             catch (Exception ex)
             {
