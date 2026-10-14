@@ -50,7 +50,7 @@ namespace Interbank.Productos.Comercial.Fcd.Infrastructure.Services.Desembolso
             var parametros = await _utilitariosRepository.ObtenerParametrosPorCodigoDominio(ParametroConstants.DominioServiciosProcesoDesembolso);
 
             var solicitudUrl = parametros.Find(x => x.NUMEROORDEN == (int)NumOrdenDominioUrlServiciosEncolamientoDesembolso.UrlApiProcesoAbono)?.DESCRIPCIONCORTA ?? "";//BALANCEADOR
-
+            solicitudUrl = "https://localhost:44310/api/v1/Desembolso/ProcesoAbono"; // pruebas locales
             var response = await HttpClientHelper.EnviarSolicitudHttp<DesembolsoRequest, DesembolsoResponse>(solicitudUrl, desembolsoRequest);
 
             return response;
@@ -162,7 +162,7 @@ namespace Interbank.Productos.Comercial.Fcd.Infrastructure.Services.Desembolso
             var parametros = await _utilitariosRepository.ObtenerParametrosPorCodigoDominio(ParametroConstants.DominioServiciosProcesoDesembolso);
 
             var solicitudUrl = parametros.Find(x => x.NUMEROORDEN == (int)NumOrdenDominioUrlServiciosEncolamientoDesembolso.UrlApiEncolamiento)?.DESCRIPCIONCORTA ?? "";
-
+            solicitudUrl = "https://localhost:44310/api/v1/Desembolso/Encolamiento"; // pruebas locales
             var response = await HttpClientHelper.EnviarSolicitudHttp<DesembolsoRequest, DesembolsoResponse>(solicitudUrl, desembolsoRequest);
 
             return response;
@@ -297,7 +297,7 @@ namespace Interbank.Productos.Comercial.Fcd.Infrastructure.Services.Desembolso
             var parametros = await _utilitariosRepository.ObtenerParametrosPorCodigoDominio(ParametroConstants.DominioDesembolsoH2H);
 
             var solicitudUrl = parametros.Find(x => x.NUMEROORDEN == (int)NumOrdenDominioDesembolsoDistribuido.UrlProcesamientoTramas)?.DESCRIPCIONCORTA ?? "";
-
+            solicitudUrl = "https://localhost:44310/api/v1/Desembolso/ProcesarTramas"; // pruebas locales
             var response = await HttpClientHelper.EnviarSolicitudHttp<ProcesarTramasRequest, BaseResponse>(solicitudUrl, procesarTramasRequest);
 
             return response;

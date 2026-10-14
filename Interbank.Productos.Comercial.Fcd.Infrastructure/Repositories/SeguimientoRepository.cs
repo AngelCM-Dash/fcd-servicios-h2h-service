@@ -260,7 +260,8 @@ namespace Interbank.Productos.Comercial.Fcd.Infrastructure.Repositories
                     // Una actualización puede traer datos vacíos: conservar lo registrado.
                     string nro = Convert.ToString(command.NroPlanilla) ?? "";
                     if (!string.IsNullOrWhiteSpace(nro)) registro.NroPlanilla = nro;
-                    registro.TipoEjecucion = Convert.ToString(command.Flag) ?? "";
+                    if (string.IsNullOrWhiteSpace(registro.TipoEjecucion))
+                        registro.TipoEjecucion = command.Flag == 3 ? "P" : "R";
                     return Task.FromResult(id);
                 }
             }
