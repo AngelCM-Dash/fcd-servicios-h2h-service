@@ -177,7 +177,7 @@ using System.Threading.Tasks;
 
 namespace Interbank.Productos.Comercial.Fcd.Infrastructure.Repositories
 {
-    // MOCK TEMPORAL: sin Oracle. Secuencias compartidas en docs/secuencias_mock.json.
+    // MOCK TEMPORAL: sin Oracle. Secuencias compartidas en ../Pruebas/secuencias_mock.json.
     public class SeguimientoRepository : ISeguimientoRepository
     {
         private readonly ITypeConvertionManager _typeConvertionManager;

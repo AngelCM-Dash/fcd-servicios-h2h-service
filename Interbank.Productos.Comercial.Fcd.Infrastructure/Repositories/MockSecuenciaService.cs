@@ -8,7 +8,7 @@ using System.Threading;
 namespace Interbank.Productos.Comercial.Fcd.Infrastructure.Repositories
 {
     // SOLO PARA PRUEBAS LOCALES. No utiliza Oracle ni agrega logs.
-    // docs/secuencias_mock.json es la única fuente de valores y estado.
+    // ../Pruebas/secuencias_mock.json es la única fuente de valores y estado.
     public static class MockSecuenciaService
     {
         private static readonly object Sync = new object();
@@ -18,7 +18,18 @@ namespace Interbank.Productos.Comercial.Fcd.Infrastructure.Repositories
             PropertyNameCaseInsensitive = false
         };
 
-        private static string Archivo => Path.Combine(EncontrarRaizProyecto(), "docs", "secuencias_mock.json");
+        private static string Archivo
+        {
+            get
+            {
+                var raizProyecto = EncontrarRaizProyecto();
+                var carpetaH2H = Directory.GetParent(raizProyecto)?.FullName
+                    ?? throw new DirectoryNotFoundException(
+                        "No se encontró la carpeta H2H que contiene el proyecto.");
+
+                return Path.Combine(carpetaH2H, "Pruebas", "secuencias_mock.json");
+            }
+        }
 
         private static string EncontrarRaizProyecto()
         {
@@ -53,8 +64,7 @@ namespace Interbank.Productos.Comercial.Fcd.Infrastructure.Repositories
                 {
                     try
                     {
-                        stream = new FileStream(archivo, FileMode.Open,
-                            FileAccess.ReadWrite, FileShare.None);
+                        stream = new FileStream(archivo, FileMode.Open, FileAccess.ReadWrite, FileShare.None);
                         break;
                     }
                     catch (IOException) when (intento < 29 && File.Exists(archivo))
