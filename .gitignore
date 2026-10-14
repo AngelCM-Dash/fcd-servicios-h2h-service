@@ -341,3 +341,6 @@ healthchecksdb
 
 # Sonarqube
 .sonarqube/
+
+# Local parameter file containing credentials
+/docs/PARAM01.csv
