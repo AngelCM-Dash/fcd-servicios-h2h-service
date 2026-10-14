@@ -20,8 +20,12 @@ namespace Interbank.Productos.Comercial.Fcd.Infrastructure.Services.Traza
 
         public Task<decimal> RegistrarCabeceraTraza(decimal IdDetalle, string? NombreArchivo, string? NroPlanilla, int Flag)
         {
-            _logger.LogInformation("RegistrarCabeceraTraza llamado con IdDetalle: {IdDetalle}, NombreArchivo: {NombreArchivo}, NroPlanilla: {NroPlanilla}, Flag: {Flag}",
-            IdDetalle, NombreArchivo, NroPlanilla, Flag);
+            using (_logger.BeginScope(new Dictionary<string, object> { ["EnviarDynatrace"] = false }))
+            {
+                _logger.LogInformation(
+                    "RegistrarCabeceraTraza llamado con IdDetalle: {IdDetalle}, NombreArchivo: {NombreArchivo}, NroPlanilla: {NroPlanilla}, Flag: {Flag}",
+                    IdDetalle, NombreArchivo, NroPlanilla, Flag);
+            }
 
             return _seguimientoRepository.InsertaSeguimientoCabecera(new DapperSeguimientoCabecera
             {
@@ -34,8 +38,12 @@ namespace Interbank.Productos.Comercial.Fcd.Infrastructure.Services.Traza
 
         public Task<decimal> RegistrarDetalleTraza(decimal IdDetalle, string? NombreMetodo, string? CapaObservacion, string? DetalleObservacion, int IdEstacion)
         {
-            _logger.LogInformation("RegistrarDetalleTraza llamado con IdDetalle: {IdDetalle}, NombreMetodo: {NombreMetodo}, CapaObservacion: {CapaObservacion}, DetalleObservacion: {DetalleObservacion}, IdEstacion: {IdEstacion}",
-            IdDetalle, NombreMetodo, CapaObservacion, DetalleObservacion, IdEstacion);
+            using (_logger.BeginScope(new Dictionary<string, object> { ["EnviarDynatrace"] = false }))
+            {
+                _logger.LogInformation(
+                    "RegistrarDetalleTraza llamado con IdDetalle: {IdDetalle}, NombreMetodo: {NombreMetodo}, CapaObservacion: {CapaObservacion}, DetalleObservacion: {DetalleObservacion}, IdEstacion: {IdEstacion}",
+                    IdDetalle, NombreMetodo, CapaObservacion, DetalleObservacion, IdEstacion);
+            }
 
             return _seguimientoRepository.InsertaSeguimientoDetalle(new DapperSeguimientoDetalle
             {
