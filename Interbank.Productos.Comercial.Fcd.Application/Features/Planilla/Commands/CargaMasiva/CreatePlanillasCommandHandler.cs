@@ -45,8 +45,7 @@ namespace Interbank.Productos.Comercial.Fcd.Application.Features.Planilla.Comman
                 await _trazaService.RegistrarDetalleTraza(CodigoDetalleTraza, GetType().Name, TrazaConstante.TrazaCargaI, "Inicio Proceso de Carga Masiva", 1);
 
                 await _trazaService.RegistrarDetalleTraza(CodigoDetalleTraza, GetType().Name, TrazaConstante.TrazaObtConfigSFTP_I, "Obtiene la Configuracion del SFTP", 2);
-                //var datosConfig = await _utilitariosRepository.ObtenerParametrosPorCodigoDominio(DominioConfiguracionSFTPCargaMasiva); // comentado Luis
-                var datosConfig = ObtenerParametrosMockDom118(); // agregado para mock
+                var datosConfig = await _utilitariosRepository.ObtenerParametrosPorCodigoDominio(DominioConfiguracionSFTPCargaMasiva);                
                 await _trazaService.RegistrarDetalleTraza(CodigoDetalleTraza, GetType().Name, TrazaConstante.TrazaObtConfigSFTP_F, "Obtuvo correctamente la Configuracion del SFTP", 2);
 
                 var flagPrueba = Convert.ToInt32(datosConfig.Find(p => p.NUMEROORDEN == (int)ParametroConstants.NumOrdenDominioCargaMasiva.FlagPruebasCargaMasiva)?.DESCRIPCIONCORTA); //comentado Luis
@@ -155,49 +154,6 @@ namespace Interbank.Productos.Comercial.Fcd.Application.Features.Planilla.Comman
                 _logger.LogError(ex, "Se realizo la Notificacion - ProcesoCargaMasiva Flujo Erroneo para la planilla {Planilla} a las {Timestamp}", numeroPlanillaLog, timestamp);
                 throw new ThrowException("36", ex.Message);
             }
-        }
-
-        DapperParametro CrearParametro(int codigo, int orden, string descripcion, string valor, string? opcion1 = null) // agregado para mock
-        {
-            return new DapperParametro
-            {
-                CODIGOPARAMETRO = codigo,
-                CODIGODOMINIO = 118,
-                DESCRIPCION = descripcion,
-                ESTADO = 1,
-                CODIGOREFERENCIA = null,
-                NUMEROORDEN = orden,
-                DESCRIPCIONCORTA = valor,
-                CODIGOREFERENCIAPARAMETRO = 0,
-                OPCION1 = opcion1
-            };
-        }
-
-        private List<DapperParametro> ObtenerParametrosMockDom118() // agregado para mock
-        {
-            var datosConfig = new List<DapperParametro>
-            {
-                CrearParametro(523, 5, "RUTA_TEMPS", @"\\S511VA06\sda\tmp\fcd\wsH2HW\Temps\"),
-                CrearParametro(524, 6, "RUTA_LOGS", @"\\S511VA06\sda\tmp\fcd\wsH2HW\Temps\log\"),
-                CrearParametro(527, 9, "SQLLDR_CN", "3N9EqlBytSji2slySe7hJNgFFrO0LJkZSXkJao50DmbvIAZDiLPyJ9vxX2GZo4WD"),
-                CrearParametro(552, 10, "SFTPHOST_CALCULO_INTERES_COMISION", "ftpuat.grupoib.local"),
-                CrearParametro(553, 11, "SFPTPORT_CALCULO_INTERES_COMISION", "22221"),
-                CrearParametro(554, 12, "SFPTUSERNAME_CALCULO_INTERES_COMISION", "BCV_FCD"),
-                CrearParametro(555, 13, "SFPTPASSWORD_CALCULO_INTERES_COMISION", "MUntWCDSjKhGiodSLHh8LMtCPy1ANQN5LJIjywPLx4I="),
-                CrearParametro(556, 14, "SFPTREMOTEPATH_CALCULO_INTERES_COMISION", "/IN/bcv/h2h/rate-commision/"),
-                CrearParametro(557, 15, "SFPTREMOTEPATHKEY_CALCULO_INTERES_COMISION", @"\\S511VA06\sda\bse\wsH2HW\PPK\ASSI_UAT_3705556_S511VA06.ppk"),
-                CrearParametro(558, 16, "FLAG_CRED_CALCULO_INTERES_COMISION", "1"),
-                CrearParametro(519, 1, "SERVERFTP", "ftpuat.grupoib.local"),
-                CrearParametro(520, 2, "PORTSFTP", "22221"),
-                CrearParametro(521, 3, "USUSFTP", "BCV_FCD"),
-                CrearParametro(522, 4, "PASSSFTP", "lLggi9qTQ5KYiJwRKIbiYpm0rZbR8QqeNAuGlQmJ6Ss="),
-                CrearParametro(525, 7, "PATH_KEY", @"\\S511VA06\sda\bse\wsH2HW\PPK\ASSI_UAT_3705556_S511VA06.ppk"),
-                CrearParametro(526, 8, "FLAG_CRED", "1"),
-                CrearParametro(599, 17, "FLAG_TIPO_CALCULO", "0"),
-                CrearParametro(842, 18, "FLAG_CARGA_DOCUMENTOS", "1", "0 = SQLLOADER - 1 = BULK INSERT"),
-                CrearParametro(843, 19, "FLAG PRUEBAS CARGAMASIVA", "0")
-            };
-            return datosConfig;
         }
 
         private static int ObtenerTipoEjecucion(CreatePlanillasCommand request)

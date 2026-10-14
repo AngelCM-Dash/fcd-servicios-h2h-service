@@ -228,6 +228,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace Interbank.Productos.Comercial.Fcd.Infrastructure.Repositories
@@ -243,11 +244,9 @@ namespace Interbank.Productos.Comercial.Fcd.Infrastructure.Repositories
         // Solo ForAllInsertDataObject y BulkInsertTable: false simula resultado negativo
         // sin excepción; el método BulkInsertTable real únicamente retorna true o lanza.
         public static bool MockForAllResultado = true;
-        // Opcional: configura respuestas DB2 para casos de negocio; si no, lista vacía.
-        public static List<DapperParametroDB2> MockParametrosDB2 = new();
-
-        // CSV real de parámetros en docs/PARAM01.csv (no colocar credenciales en el código).
+        // Archivos locales de parámetros en docs (no colocar credenciales en el código).
         public static string MockNombreArchivoParametros = "PARAM01.csv";
+        public static string MockNombreArchivoParametrosDB2 = "PARAMDB2.csv";
 
         public UtilitariosRepository(
             ITypeConvertionManager typeConversionManager,
@@ -279,7 +278,8 @@ namespace Interbank.Productos.Comercial.Fcd.Infrastructure.Repositories
             try
             {
                 ProvocarError(nameof(ObtenerParametrosDB2PorCodigoDominioDB2));
-                var resultado = MockParametrosDB2
+                string archivo = ObtenerRutaArchivoParametros(MockNombreArchivoParametrosDB2);
+                var resultado = LeerParametrosDB2CSV(archivo)
                     .Where(p => p.CodigoDominioDB2 == codigoDominio && p.NumOrden == numOrden)
                     .ToList();
                 return Task.FromResult(resultado);
@@ -296,7 +296,7 @@ namespace Interbank.Productos.Comercial.Fcd.Infrastructure.Repositories
             try
             {
                 ProvocarError(nameof(ObtenerParametrosPorCodigoDominio));
-                string archivo = Path.Combine(EncontrarRaizProyecto(), "docs", MockNombreArchivoParametros);
+                string archivo = ObtenerRutaArchivoParametros(MockNombreArchivoParametros);
                 var lista = LeerParametrosCSV(archivo)
                     .Where(p => p.CODIGODOMINIO == codigoDominio)
                     .ToList();
@@ -356,6 +356,9 @@ namespace Interbank.Productos.Comercial.Fcd.Infrastructure.Repositories
             }
         }
 
+        private static string ObtenerRutaArchivoParametros(string nombreArchivo) =>
+            Path.Combine(EncontrarRaizProyecto(), "docs", nombreArchivo);
+
         private static string EncontrarRaizProyecto()
         {
             DirectoryInfo? actual = new DirectoryInfo(Directory.GetCurrentDirectory());
@@ -379,7 +382,7 @@ namespace Interbank.Productos.Comercial.Fcd.Infrastructure.Repositories
                 throw new FileNotFoundException("No se encontró el archivo local de parámetros.", archivo);
 
             var lista = new List<DapperParametro>();
-            using var lector = new TextFieldParser(archivo);
+            using var lector = new TextFieldParser(archivo, Encoding.Latin1);
             lector.TextFieldType = FieldType.Delimited;
             lector.SetDelimiters(";");
             lector.HasFieldsEnclosedInQuotes = true;
@@ -408,6 +411,51 @@ namespace Interbank.Productos.Comercial.Fcd.Infrastructure.Repositories
                     DESCRIPCIONCORTA = Texto(c[6]),
                     CODIGOREFERENCIAPARAMETRO = Entero(c[7]),
                     OPCION1 = Texto(c[8])
+                });
+            }
+            return lista;
+        }
+
+        private static List<DapperParametroDB2> LeerParametrosDB2CSV(string archivo)
+        {
+            if (!File.Exists(archivo))
+                throw new FileNotFoundException("No se encontró el archivo local de parámetros DB2.", archivo);
+
+            var lista = new List<DapperParametroDB2>();
+            using var lector = new TextFieldParser(archivo, Encoding.Latin1);
+            lector.TextFieldType = FieldType.Delimited;
+            lector.SetDelimiters(";");
+            lector.HasFieldsEnclosedInQuotes = true;
+            var encabezado = lector.ReadFields();
+            string[] encabezadoEsperado =
+            {
+                "CODIGOPARAMETRODB2",
+                "CODIGODOMINIODB2",
+                "DESCRIPCION",
+                "SCRIPT",
+                "ESTADO",
+                "NUMORDEN"
+            };
+            if (encabezado == null || !encabezado.SequenceEqual(encabezadoEsperado))
+                throw new InvalidDataException("El formato de PARAMDB2.csv no coincide con el esperado.");
+
+            while (!lector.EndOfData)
+            {
+                var c = lector.ReadFields();
+                if (c == null || c.Length != encabezadoEsperado.Length)
+                    throw new InvalidDataException("Registro de parámetros DB2 CSV inválido.");
+
+                static int Entero(string? valor) => int.TryParse(valor, out var n) ? n : 0;
+                static string? Texto(string? valor) => string.IsNullOrEmpty(valor) ? null : valor;
+
+                lista.Add(new DapperParametroDB2
+                {
+                    CodigoParametroDB2 = Entero(c[0]),
+                    CodigoDominioDB2 = Entero(c[1]),
+                    Descripcion = Texto(c[2]),
+                    Script = Texto(c[3]),
+                    Estado = Entero(c[4]),
+                    NumOrden = Entero(c[5])
                 });
             }
             return lista;
