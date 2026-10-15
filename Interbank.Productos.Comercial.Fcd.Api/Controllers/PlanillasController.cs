@@ -117,10 +117,11 @@ namespace Interbank.Productos.Comercial.Fcd.Api.Controllers
             ["EnviarDynatrace"] = true,
             ["Accion"] = accion,
             ["ArchivoNombre"] = command.NombreArchivo ?? string.Empty,
-            ["TransactionId"] = command.CodigoUnico ?? string.Empty,
+            ["TransactionId"] = string.Empty,
             ["ProductoCodigo"] = command.CodigoProducto?.ToString() ?? string.Empty,
+            ["EmpresaCodigo"] = command.CodigoUnico ?? string.Empty,
             ["Canal"] = command.CanalAtencion ?? string.Empty,
-            ["EstacionId"] = command.CodigoTienda?.ToString() ?? string.Empty
+            ["EstacionId"] = string.Empty
         };
 
         [HttpGet("SeguimientoDetalleCabecera")]

@@ -110,6 +110,12 @@ namespace Interbank.Productos.Comercial.Fcd.Application.Features.Planilla.Comman
                 {
                     await _trazaService.RegistrarDetalleTraza(CodigoDetalleTraza, GetType().Name, TrazaConstante.TrazaCargaPlaI, "Inicia registro de cabecera tabla Planilla", 4);
                     PlanillaC = await _planillaRepository.RegistrarPlanillaFCD_H2H(planillaEntity);
+                    var planillaScope = _logger.BeginScope(
+                                            new Dictionary<string, object>
+                                            {
+                                                ["PlanillaNumero"] = PlanillaC.NumeroPlanilla ?? ""
+                                            });
+                    _logger.LogInformation("Planilla registrada correctamente: {PlanillaNumero}", PlanillaC.NumeroPlanilla ?? "");
                     await _planillaRepository.ActualizarObservacionPlanilla(PlanillaC.NumeroPlanilla ?? "", PlanillaC.Observacion ?? "");
 
                     await _trazaService.RegistrarCabeceraTraza(CodigoDetalleTraza, request.NombreArchivo, PlanillaC.NumeroPlanilla, 2);
