@@ -172,7 +172,9 @@ using NextSIT.Utility;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace Interbank.Productos.Comercial.Fcd.Infrastructure.Repositories
@@ -190,8 +192,9 @@ namespace Interbank.Productos.Comercial.Fcd.Infrastructure.Repositories
         public static string MockMetodoError = "TODOS";
 
         private static readonly object Sync = new object();
-        private static readonly Dictionary<decimal, CabeceraMock> Cabeceras = new Dictionary<decimal, CabeceraMock>();
-        private static readonly List<DetalleMock> Detalles = new List<DetalleMock>();
+        private static readonly Encoding CsvEncoding = Encoding.Latin1;
+        private const string ArchivoCabeceras = @"D:\Inteligencia Artificial\FuentesFCD\H2H\Pruebas\seguimiento\SEGUIMIENTO_CAB_H2HW.csv";
+        private const string ArchivoDetalles = @"D:\Inteligencia Artificial\FuentesFCD\H2H\Pruebas\seguimiento\SEGUIMIENTO_DET_H2HW.csv";
 
         private sealed class CabeceraMock
         {
@@ -199,7 +202,6 @@ namespace Interbank.Productos.Comercial.Fcd.Infrastructure.Repositories
             public string NombreArchivo { get; set; } = "";
             public string NroPlanilla { get; set; } = "";
             public string TipoEjecucion { get; set; } = "";
-            public DateTime FechaRegistro { get; set; }
         }
 
         private sealed class DetalleMock
@@ -250,18 +252,23 @@ namespace Interbank.Productos.Comercial.Fcd.Infrastructure.Repositories
                 lock (Sync)
                 {
                     decimal id = command.IdDetalle > 0 ? command.IdDetalle : MockSecuenciaService.Siguiente("CodigoDetalle");
-
-                    if (!Cabeceras.TryGetValue(id, out var registro))
-                    {
-                        registro = new CabeceraMock { IdDetalle = id, FechaRegistro = DateTime.Now };
-                        Cabeceras[id] = registro;
-                    }
+                    var lineas = LeerLineas(ArchivoCabeceras);
+                    var registro = LeerCabeceras(lineas).FirstOrDefault(x => x.IdDetalle == id)
+                        ?? new CabeceraMock { IdDetalle = id };
                     registro.NombreArchivo = Convert.ToString(command.NombreArchivo) ?? "";
                     // Una actualización puede traer datos vacíos: conservar lo registrado.
                     string nro = Convert.ToString(command.NroPlanilla) ?? "";
                     if (!string.IsNullOrWhiteSpace(nro)) registro.NroPlanilla = nro;
                     if (string.IsNullOrWhiteSpace(registro.TipoEjecucion))
                         registro.TipoEjecucion = command.Flag == 3 ? "P" : "R";
+
+                    lineas.RemoveAll(x => EsCabeceraConId(x, id));
+                    lineas.Insert(1, CrearLineaCsv(
+                        id.ToString(CultureInfo.InvariantCulture),
+                        registro.NombreArchivo,
+                        registro.NroPlanilla,
+                        registro.TipoEjecucion));
+                    EscribirLineas(ArchivoCabeceras, lineas);
                     return Task.FromResult(id);
                 }
             }
@@ -281,16 +288,16 @@ namespace Interbank.Productos.Comercial.Fcd.Infrastructure.Repositories
                 lock (Sync)
                 {
                     decimal id = MockSecuenciaService.Siguiente("CodigoSeguimiento");
-                    Detalles.Add(new DetalleMock
-                    {
-                        IdSeguimiento = id,
-                        IdDetalle = command.IdDetalle,
-                        NombreMetodo = Convert.ToString(command.NombreMetodo) ?? "",
-                        CapaObservacion = Convert.ToString(command.CapaObservacion) ?? "",
-                        DetalleObservacion = Convert.ToString(command.DetalleObservacion) ?? "",
-                        IdEstacion = Convert.ToDecimal(command.IdEstacion),
-                        FechaRegistro = DateTime.Now
-                    });
+                    var lineas = LeerLineas(ArchivoDetalles);
+                    lineas.Insert(1, CrearLineaCsv(
+                        id.ToString(CultureInfo.InvariantCulture),
+                        command.IdDetalle.ToString(CultureInfo.InvariantCulture),
+                        DateTime.Now.ToString("dd/MM/yyyy HH:mm:ss", CultureInfo.InvariantCulture),
+                        Convert.ToString(command.NombreMetodo) ?? "",
+                        Convert.ToString(command.CapaObservacion) ?? "",
+                        Convert.ToString(command.DetalleObservacion) ?? "",
+                        Convert.ToDecimal(command.IdEstacion).ToString(CultureInfo.InvariantCulture)));
+                    EscribirLineas(ArchivoDetalles, lineas);
                     return Task.FromResult(id);
                 }
             }
@@ -308,9 +315,8 @@ namespace Interbank.Productos.Comercial.Fcd.Infrastructure.Repositories
                 FallarSiCorresponde(nameof(ObtenerIdSeguimientoxPlanilla));
                 lock (Sync)
                 {
-                    decimal id = Cabeceras.Values
+                    decimal id = LeerCabeceras(LeerLineas(ArchivoCabeceras))
                         .Where(x => x.NroPlanilla == numeroPlanilla)
-                        .OrderByDescending(x => x.FechaRegistro)
                         .Select(x => x.IdDetalle)
                         .FirstOrDefault();
                     return Task.FromResult(id == 0 ? 0 : checked((int)id));
@@ -334,8 +340,10 @@ namespace Interbank.Productos.Comercial.Fcd.Infrastructure.Repositories
                 DateTime? hasta = ParseFechaMock(fechaHasta);
                 lock (Sync)
                 {
-                    var consulta = from detalle in Detalles
-                                   join cab in Cabeceras.Values on detalle.IdDetalle equals cab.IdDetalle
+                    var detalles = LeerDetalles(LeerLineas(ArchivoDetalles));
+                    var cabeceras = LeerCabeceras(LeerLineas(ArchivoCabeceras));
+                    var consulta = from detalle in detalles
+                                   join cab in cabeceras on detalle.IdDetalle equals cab.IdDetalle
                                    where (string.IsNullOrWhiteSpace(nombreArchivo) || cab.NombreArchivo == nombreArchivo)
                                       && (string.IsNullOrWhiteSpace(numeroPlanilla) || cab.NroPlanilla == numeroPlanilla)
                                       && (!desde.HasValue || detalle.FechaRegistro.Date >= desde.Value.Date)
@@ -379,15 +387,135 @@ namespace Interbank.Productos.Comercial.Fcd.Infrastructure.Repositories
                 FallarSiCorresponde(nameof(ObtenerTipoEjecucionSeguimientoxIdDetalle));
                 lock (Sync)
                 {
-                    return Task.FromResult(Cabeceras.TryGetValue(idDetalle, out var registro)
-                        ? registro.TipoEjecucion
-                        : "");
+                    string tipoEjecucion = LeerCabeceras(LeerLineas(ArchivoCabeceras))
+                        .Where(x => x.IdDetalle == idDetalle)
+                        .Select(x => x.TipoEjecucion)
+                        .FirstOrDefault() ?? "";
+                    return Task.FromResult(tipoEjecucion);
                 }
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "ObtenerTipoEjecucionSeguimientoxIdDetalle - Error en base de datos");
                 throw new InvalidOperationException(Messages.ErrorBaseDatos, ex);
+            }
+        }
+
+        private static List<string> LeerLineas(string archivo)
+        {
+            var lineas = File.ReadAllLines(archivo, CsvEncoding).ToList();
+            if (lineas.Count == 0)
+                throw new InvalidDataException("El archivo CSV no contiene la fila de cabecera: " + archivo);
+            return lineas;
+        }
+
+        private static List<CabeceraMock> LeerCabeceras(IEnumerable<string> lineas) =>
+            lineas.Skip(1)
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Select(x => SepararLineaCsv(x))
+                .Select(campos =>
+                {
+                    ValidarCantidadCampos(campos, 4, ArchivoCabeceras);
+                    return new CabeceraMock
+                    {
+                        IdDetalle = decimal.Parse(campos[0], CultureInfo.InvariantCulture),
+                        NombreArchivo = campos[1],
+                        NroPlanilla = campos[2],
+                        TipoEjecucion = campos[3]
+                    };
+                })
+                .ToList();
+
+        private static List<DetalleMock> LeerDetalles(IEnumerable<string> lineas) =>
+            lineas.Skip(1)
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Select(x => SepararLineaCsv(x))
+                .Select(campos =>
+                {
+                    ValidarCantidadCampos(campos, 7, ArchivoDetalles);
+                    return new DetalleMock
+                    {
+                        IdSeguimiento = decimal.Parse(campos[0], CultureInfo.InvariantCulture),
+                        IdDetalle = decimal.Parse(campos[1], CultureInfo.InvariantCulture),
+                        FechaRegistro = DateTime.ParseExact(
+                            campos[2], "dd/MM/yyyy HH:mm:ss", CultureInfo.InvariantCulture),
+                        NombreMetodo = campos[3],
+                        CapaObservacion = campos[4],
+                        DetalleObservacion = campos[5],
+                        IdEstacion = decimal.Parse(campos[6], CultureInfo.InvariantCulture)
+                    };
+                })
+                .ToList();
+
+        private static bool EsCabeceraConId(string linea, decimal id)
+        {
+            if (string.IsNullOrWhiteSpace(linea)) return false;
+            var campos = SepararLineaCsv(linea);
+            return campos.Count > 0 &&
+                   decimal.TryParse(campos[0], NumberStyles.Number, CultureInfo.InvariantCulture, out decimal idActual) &&
+                   idActual == id;
+        }
+
+        private static List<string> SepararLineaCsv(string linea)
+        {
+            var campos = new List<string>();
+            var campo = new StringBuilder();
+            bool entreComillas = false;
+
+            for (int i = 0; i < linea.Length; i++)
+            {
+                char caracter = linea[i];
+                if (caracter == '"')
+                {
+                    if (entreComillas && i + 1 < linea.Length && linea[i + 1] == '"')
+                    {
+                        campo.Append('"');
+                        i++;
+                    }
+                    else
+                    {
+                        entreComillas = !entreComillas;
+                    }
+                }
+                else if (caracter == ';' && !entreComillas)
+                {
+                    campos.Add(campo.ToString());
+                    campo.Clear();
+                }
+                else
+                {
+                    campo.Append(caracter);
+                }
+            }
+
+            if (entreComillas)
+                throw new InvalidDataException("La línea CSV contiene comillas sin cerrar: " + linea);
+
+            campos.Add(campo.ToString());
+            return campos;
+        }
+
+        private static string CrearLineaCsv(params string[] campos) =>
+            string.Join(";", campos.Select(x => $"\"{x.Replace("\"", "\"\"")}\""));
+
+        private static void ValidarCantidadCampos(IReadOnlyCollection<string> campos, int cantidadEsperada, string archivo)
+        {
+            if (campos.Count != cantidadEsperada)
+                throw new InvalidDataException(
+                    $"El archivo CSV {archivo} contiene un registro con {campos.Count} campos; se esperaban {cantidadEsperada}.");
+        }
+
+        private static void EscribirLineas(string archivo, IEnumerable<string> lineas)
+        {
+            string archivoTemporal = archivo + ".tmp";
+            try
+            {
+                File.WriteAllLines(archivoTemporal, lineas, CsvEncoding);
+                File.Move(archivoTemporal, archivo, true);
+            }
+            finally
+            {
+                if (File.Exists(archivoTemporal)) File.Delete(archivoTemporal);
             }
         }
     }
